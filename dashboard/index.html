@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cup Rosters Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: white;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .metric-selector {
+            display: flex;
+            align-items: center;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+
+        .chart-container {
+            background: white;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .info-panel h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .info-panel p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #666;
+            margin: 0;
+        }
+
+        #metricDescription {
+            min-height: 120px;
+        }
+
+        #countryDetails {
+            min-height: 300px;
+        }
+
+        .country-stats {
+            font-size: 13px;
+        }
+
+        .country-stats table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .country-stats th,
+        .country-stats td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .country-stats th {
+            font-weight: 600;
+            color: #333;
+            font-size: 12px;
+        }
+
+        .country-stats td {
+            color: #666;
+        }
+
+        .no-selection {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-button {
+            padding: 12px 30px;
+            background: white;
+            color: #333;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            min-width: 200px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-button:hover {
+            border-color: #999;
+        }
+
+        .dropdown-arrow {
+            margin-left: 10px;
+            transition: transform 0.3s;
+        }
+
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 5px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f5f5f5;
+        }
+
+        .dropdown-item:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .dropdown-item:last-child {
+            border-radius: 0 0 6px 6px;
+        }
+
+        #chart {
+            width: 100%;
+            height: 720px;
+            background: white;
+        }
+
+        .axis-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            font-size: 12px;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-row">
+            <h1>FIFA World Cup Rosters</h1>
+            
+            <div class="metric-selector">
+                <div class="dropdown-container">
+                    <button class="dropdown-button" id="metricDropdown">
+                        <span id="selectedMetric">Average Age</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dropdown-item" data-metric="age">Average Age</div>
+                        <div class="dropdown-item" data-metric="caps">Average Caps</div>
+                        <div class="dropdown-item" data-metric="homeleague">% Home League</div>
+                        <div class="dropdown-item" data-metric="relativevalue">Relative Market Value</div>
+                        <div class="dropdown-item" data-metric="totalvalue">Total Squad Value</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <div id="chart"></div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="info-panel" id="metricDescription">
+                    <h3>Metric Description</h3>
+                    <p id="descriptionText">Average age of players in each country's World Cup squad. Younger teams may have more energy and potential, while older teams often bring experience and tactical maturity.</p>
+                </div>
+                
+                <div class="info-panel" id="countryDetails">
+                    <h3>Country Details</h3>
+                    <div id="countryDetailsContent" class="no-selection">
+                        Hover over a country flag to see detailed statistics
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip"></div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
