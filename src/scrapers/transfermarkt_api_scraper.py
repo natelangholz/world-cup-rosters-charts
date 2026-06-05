@@ -80,32 +80,48 @@ def find_closest_market_value(history, target_date):
     
     return closest
 
-async def scrape_market_values(player_ids_file, output_file, batch_size=50, delay=0.1):
+async def scrape_market_values(player_ids_file, output_file, batch_size=50, delay=0.1, year=None, country=None):
     """
-    Scrape market values for all players.
+    Scrape market values for all players or filter by year/country.
     
     Args:
         player_ids_file: CSV file with player_id and player_name columns
         output_file: Output JSON file for raw market value data
         batch_size: Number of concurrent requests
         delay: Delay between batches (seconds)
+        year: (optional) Filter to specific World Cup year
+        country: (optional) Filter to specific country
     """
     # Load player IDs
     print(f"Loading player IDs from {player_ids_file}...")
-    # Load player IDs from JSON file
-    import json
-    with open(player_ids_file, 'r') as f:
-        player_data = json.load(f)
     
-    # Convert to DataFrame
-    df = pd.DataFrame(player_data)
+    # Check if it's JSON or CSV
+    if player_ids_file.endswith('.json'):
+        import json
+        with open(player_ids_file, 'r') as f:
+            player_data = json.load(f)
+        df = pd.DataFrame(player_data)
+    else:
+        df = pd.read_csv(player_ids_file)
     
     if 'player_id' not in df.columns:
         print("❌ Error: player_ids_file must have 'player_id' column")
         return
     
-    # Get unique players (use 'name' column from JSON)
-    players = df[['player_id', 'name']].drop_duplicates()
+    # Apply filters if specified
+    if year is not None:
+        if 'year' in df.columns:
+            df = df[df['year'] == year]
+            print(f"Filtering to year {year}")
+    
+    if country is not None:
+        if 'country' in df.columns:
+            df = df[df['country'] == country]
+            print(f"Filtering to country {country}")
+    
+    # Get unique players (use 'name' column from JSON or CSV)
+    name_col = 'name' if 'name' in df.columns else 'Player'
+    players = df[['player_id', name_col]].drop_duplicates()
     players.columns = ['player_id', 'Player']  # Rename for consistency
     print(f"Found {len(players)} unique players")
     

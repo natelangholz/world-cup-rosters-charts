@@ -19,9 +19,85 @@ const countryFlags = {
     'Curaçao': 'cw', 'Curacao': 'cw'
 };
 
-let currentMetric = 'age';
+// Map football association names to country names for home league calculation
+const associationToCountry = {
+    'United States Soccer Federation': 'United States',
+    'The Football Association': 'England',
+    'German Football Association': 'Germany',
+    'French Football Federation': 'France',
+    'Royal Dutch Football Association': 'Netherlands',
+    'Italian Football Federation': 'Italy',
+    'Scottish Football Association': 'Scotland',
+    'Canadian Soccer Association': 'Canada',
+    'Royal Spanish Football Federation': 'Spain',
+    'Mexican Football Federation': 'Mexico',
+    'Saudi Arabian Football Federation': 'Saudi Arabia',
+    'Argentine Football Association': 'Argentina',
+    'Brazilian Football Confederation': 'Brazil',
+    'Portuguese Football Federation': 'Portugal',
+    'Royal Belgian Football Association': 'Belgium',
+    'Swiss Football Association': 'Switzerland',
+    'Austrian Football Association': 'Austria',
+    'Danish Football Association': 'Denmark',
+    'Swedish Football Association': 'Sweden',
+    'Norwegian Football Federation': 'Norway',
+    'Polish Football Association': 'Poland',
+    'Turkish Football Federation': 'Turkey',
+    'Hellenic Football Federation': 'Greece',
+    'Croatian Football Federation': 'Croatia',
+    'Football Association of Serbia': 'Serbia',
+    'Romanian Football Federation': 'Romania',
+    'Bulgarian Football Union': 'Bulgaria',
+    'Football Association of Slovenia': 'Slovenia',
+    'Slovak Football Association': 'Slovakia',
+    'Japan Football Association': 'Japan',
+    'Korea Football Association': 'South Korea',
+    'Chinese Football Association': 'China PR',
+    'Football Australia': 'Australia',
+    'New Zealand Football': 'New Zealand',
+    'Qatar Football Association': 'Qatar',
+    'Football Federation Islamic Republic of Iran': 'Iran',
+    'Iraq Football Association': 'Iraq',
+    'Royal Moroccan Football Federation': 'Morocco',
+    'Tunisian Football Federation': 'Tunisia',
+    'Egyptian Football Association': 'Egypt',
+    'Algerian Football Federation': 'Algeria',
+    'Ghana Football Association': 'Ghana',
+    'South African Football Association': 'South Africa',
+    'Uruguayan Football Association': 'Uruguay',
+    'Football Federation of Chile': 'Chile',
+    'Colombian Football Federation': 'Colombia',
+    'Paraguayan Football Association': 'Paraguay',
+    'Ecuadorian Football Federation': 'Ecuador',
+    'Costa Rican Football Federation': 'Costa Rica',
+    'National Autonomous Federation of Football of Honduras': 'Honduras',
+    'Panamanian Football Federation': 'Panama',
+    'Haitian Football Federation': 'Haiti',
+    'Football Association of Wales': 'Wales',
+    'Football Association of Bosnia and Herzegovina': 'Bosnia and Herzegovina',
+    'Uzbekistan Football Association': 'Uzbekistan',
+    'Jordan Football Association': 'Jordan',
+    'Football Association of Ireland': 'Republic of Ireland',
+    'Hungarian Football Federation': 'Hungary',
+    'Football Association of the Czech Republic': 'Czech Republic',
+    'Russian Football Union': 'Russia',
+    'United Arab Emirates Football Association': 'United Arab Emirates',
+    'Israel Football Association': 'Israel',
+    'Venezuelan Football Federation': 'Venezuela',
+    'Kazakhstan Football Federation': 'Kazakhstan',
+    'Association of Football Federations of Azerbaijan': 'Azerbaijan',
+    'Football Federation of Armenia': 'Armenia',
+    'Cyprus Football Association': 'Cyprus',
+    'Football Association of Finland': 'Finland',
+    'Football Association of Thailand': 'Thailand',
+    'Football Association of Malaysia': 'Malaysia',
+    'Football Association of Indonesia': 'Indonesia'
+};
+
+let currentMetric = 'caps';
 let data = [];
 let allRosterData = []; // Store raw roster data for country details
+let tournamentResults = {}; // Store tournament results by year-country
 
 // Metric descriptions
 const metricDescriptions = {
@@ -34,6 +110,17 @@ const metricDescriptions = {
 
 // Load and process data
 async function loadData() {
+    // Load tournament results
+    const resultsResponse = await fetch('../data/processed/tournament_results.csv');
+    const resultsText = await resultsResponse.text();
+    const resultsRows = d3.csvParse(resultsText);
+    
+    // Create lookup object for tournament results
+    resultsRows.forEach(row => {
+        const key = `${row.Year}-${row.Country}`;
+        tournamentResults[key] = row.Display;
+    });
+    
     const response = await fetch('../data/processed/rosters_with_market_values.csv');
     const csvText = await response.text();
     const rows = d3.csvParse(csvText);
@@ -54,10 +141,16 @@ async function loadData() {
                 ? d3.sum(playersWithValues, d => +d.Market_Value_EUR) / 1000000
                 : null;
             
+            // Calculate home league percentage by mapping Club_Country to actual country
+            const homeLeaguePlayers = v.filter(d => {
+                const clubCountry = associationToCountry[d.Club_Country] || d.Club_Country;
+                return clubCountry === d.Country;
+            }).length;
+            
             return {
                 avgAge: d3.mean(v, d => +d.Age),
                 avgCaps: d3.mean(v, d => +d.Caps),
-                homeLeaguePct: (v.filter(d => d.Home_Country_Flag === 'True' || d.Home_Country_Flag === true).length / v.length) * 100,
+                homeLeaguePct: (homeLeaguePlayers / v.length) * 100,
                 avgMarketValue: avgMarketValue,
                 totalMarketValue: totalMarketValue,
                 country: v[0].Country,
@@ -126,19 +219,21 @@ function updateCountryDetails(country, year) {
     // Sort by year descending (most recent first)
     countryData.sort((a, b) => b.year - a.year);
     
-    // Build HTML table
+    // Build HTML table without scrolling
     let html = `
         <div class="country-stats">
-            <h4 style="margin-bottom: 10px; color: #333;">${country}</h4>
+            <h4 style="margin-bottom: 8px; color: #333; font-size: 14px;">${country}</h4>
             <table>
                 <thead>
                     <tr>
                         <th>Year</th>
-                        <th>Avg Age</th>
-                        <th>Avg Caps</th>
-                        <th>Home %</th>
-                        <th>Avg Value</th>
-                        <th>Total Value</th>
+                        <th>Caps</th>
+                        <th>Age</th>
+                        <th>Home%</th>
+                        <th>Total€</th>
+                        <th>Avg€</th>
+                        <th>Rel</th>
+                        <th>Finish</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -149,14 +244,24 @@ function updateCountryDetails(country, year) {
         const rowStyle = isCurrentYear ? 'background: #e3f2fd; font-weight: 600;' : '';
         const avgValueStr = d.avgMarketValue ? `€${d.avgMarketValue.toFixed(1)}M` : 'N/A';
         const totalValueStr = d.totalMarketValue ? `€${d.totalMarketValue.toFixed(0)}M` : 'N/A';
+        const relValueStr = d.relativeMarketValue !== null && d.relativeMarketValue !== undefined
+            ? d.relativeMarketValue.toFixed(2)
+            : 'N/A';
+        
+        // Get tournament finish
+        const resultKey = `${d.year}-${d.country}`;
+        const finish = tournamentResults[resultKey] || '-';
+        
         html += `
             <tr style="${rowStyle}">
                 <td>${d.year}</td>
-                <td>${d.avgAge.toFixed(1)}</td>
                 <td>${d.avgCaps.toFixed(1)}</td>
+                <td>${d.avgAge.toFixed(1)}</td>
                 <td>${d.homeLeaguePct.toFixed(1)}%</td>
-                <td>${avgValueStr}</td>
                 <td>${totalValueStr}</td>
+                <td>${avgValueStr}</td>
+                <td>${relValueStr}</td>
+                <td>${finish}</td>
             </tr>
         `;
     });
@@ -380,7 +485,7 @@ function renderChart() {
                 .style('font-weight', 'bold')
                 .text(d.country.substring(0, 3).toUpperCase());
         })
-        .on('mouseover', function(event, d) {
+        .on('click', function(event, d) {
             // First, handle cluster expansion if this flag is part of a cluster
             if (d.clusterSize > 1) {
                 // Find all flags in the same cluster (same year, similar value)
@@ -453,6 +558,83 @@ function renderChart() {
                 .attr('x', fd => fd.displayX - (flagSize * 1.5)/2)
                 .attr('y', fd => fd.displayY - (flagSize * 1.5)/2);
             
+            // Update country details panel (persistent on click)
+            updateCountryDetails(d.country, d.year);
+        })
+        .on('mouseover', function(event, d) {
+            // First, handle cluster expansion if this flag is part of a cluster
+            if (d.clusterSize > 1) {
+                // Find all flags in the same cluster (same year, similar value)
+                let threshold;
+                if (currentMetric === 'homeleague') {
+                    threshold = 2;
+                } else if (currentMetric === 'relativevalue') {
+                    threshold = 0.3;
+                } else if (currentMetric === 'totalvalue') {
+                    threshold = 20;
+                } else {
+                    threshold = 0.3;
+                }
+                
+                let value;
+                if (currentMetric === 'age') {
+                    value = d.avgAge;
+                } else if (currentMetric === 'caps') {
+                    value = d.avgCaps;
+                } else if (currentMetric === 'homeleague') {
+                    value = d.homeLeaguePct;
+                } else if (currentMetric === 'relativevalue') {
+                    value = d.relativeMarketValue;
+                } else if (currentMetric === 'totalvalue') {
+                    value = d.totalMarketValue;
+                }
+                
+                const clusterFlags = svg.selectAll('.flag')
+                    .filter(function(other) {
+                        let otherValue;
+                        if (currentMetric === 'age') {
+                            otherValue = other.avgAge;
+                        } else if (currentMetric === 'caps') {
+                            otherValue = other.avgCaps;
+                        } else if (currentMetric === 'homeleague') {
+                            otherValue = other.homeLeaguePct;
+                        } else if (currentMetric === 'relativevalue') {
+                            otherValue = other.relativeMarketValue;
+                        } else if (currentMetric === 'totalvalue') {
+                            otherValue = other.totalMarketValue;
+                        }
+                        return other.year === d.year && Math.abs(value - otherValue) < threshold;
+                    });
+                
+                // Expand cluster horizontally
+                const clusterData = clusterFlags.data();
+                const spacing = 28;
+                const totalWidth = (clusterData.length - 1) * spacing;
+                const startX = d.baseX - totalWidth / 2;
+                
+                clusterFlags
+                    .transition()
+                    .duration(200)
+                    .attr('x', (cd, i) => startX + (i * spacing) - flagSize/2)
+                    .attr('width', flagSize)
+                    .attr('height', flagSize);
+            }
+            
+            // Enlarge all instances of this country across all years and bring to front
+            svg.selectAll('.flag')
+                .filter(other => other.country === d.country)
+                .each(function() {
+                    // Move to front by re-appending to parent
+                    this.parentNode.appendChild(this);
+                })
+                .transition()
+                .duration(200)
+                .attr('width', flagSize * 1.5)
+                .attr('height', flagSize * 1.5)
+                .attr('x', fd => fd.displayX - (flagSize * 1.5)/2)
+                .attr('y', fd => fd.displayY - (flagSize * 1.5)/2);
+            
+            // Show tooltip on hover
             let value;
             if (currentMetric === 'age') {
                 value = d.avgAge.toFixed(1) + ' years';
@@ -471,9 +653,6 @@ function renderChart() {
                 .html(`<strong>${d.country}</strong><br>${d.year}<br>${value}`)
                 .style('left', (event.pageX + 10) + 'px')
                 .style('top', (event.pageY - 10) + 'px');
-            
-            // Update country details panel
-            updateCountryDetails(d.country, d.year);
         })
         .on('mouseout', function(event, d) {
             // Return all flags to their jittered positions
@@ -486,9 +665,6 @@ function renderChart() {
                 .attr('y', fd => fd.displayY - flagSize/2);
             
             tooltip.style('opacity', 0);
-            
-            // Clear country details panel
-            clearCountryDetails();
         });
 }
 

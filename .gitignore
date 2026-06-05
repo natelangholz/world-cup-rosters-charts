@@ -50,6 +50,9 @@ playwright/.auth/
 test-results/
 playwright-report/
 
+# Archive directory (deprecated/test code)
+archive/
+
 # Environment variables
 .env
 .env.local

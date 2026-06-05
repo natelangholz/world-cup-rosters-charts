@@ -44,7 +44,7 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 1fr 400px;
             gap: 30px;
         }
 
@@ -88,30 +88,34 @@
         }
 
         .country-stats {
-            font-size: 13px;
+            font-size: 11px;
         }
 
         .country-stats table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 8px;
+            font-size: 10px;
         }
 
         .country-stats th,
         .country-stats td {
-            padding: 6px 8px;
+            padding: 4px 3px;
             text-align: left;
             border-bottom: 1px solid #e9ecef;
+            white-space: nowrap;
         }
 
         .country-stats th {
             font-weight: 600;
             color: #333;
-            font-size: 12px;
+            font-size: 10px;
+            background: #f8f9fa;
         }
 
         .country-stats td {
             color: #666;
+            font-size: 10px;
         }
 
         .no-selection {
@@ -224,15 +228,15 @@
             <div class="metric-selector">
                 <div class="dropdown-container">
                     <button class="dropdown-button" id="metricDropdown">
-                        <span id="selectedMetric">Average Age</span>
+                        <span id="selectedMetric">Average Caps</span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <div class="dropdown-item" data-metric="age">Average Age</div>
                         <div class="dropdown-item" data-metric="caps">Average Caps</div>
+                        <div class="dropdown-item" data-metric="age">Average Age</div>
                         <div class="dropdown-item" data-metric="homeleague">% Home League</div>
-                        <div class="dropdown-item" data-metric="relativevalue">Relative Market Value</div>
                         <div class="dropdown-item" data-metric="totalvalue">Total Squad Value</div>
+                        <div class="dropdown-item" data-metric="relativevalue">Relative Market Value</div>
                     </div>
                 </div>
             </div>
@@ -246,13 +250,13 @@
             <div class="sidebar">
                 <div class="info-panel" id="metricDescription">
                     <h3>Metric Description</h3>
-                    <p id="descriptionText">Average age of players in each country's World Cup squad. Younger teams may have more energy and potential, while older teams often bring experience and tactical maturity.</p>
+                    <p id="descriptionText">Average number of international appearances (caps) per player in each squad. Higher caps indicate more experienced players who have represented their country frequently.</p>
                 </div>
                 
                 <div class="info-panel" id="countryDetails">
                     <h3>Country Details</h3>
                     <div id="countryDetailsContent" class="no-selection">
-                        Hover over a country flag to see detailed statistics
+                        Click on a country flag to see detailed statistics
                     </div>
                 </div>
             </div>
