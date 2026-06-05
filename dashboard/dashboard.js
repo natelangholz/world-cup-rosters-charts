@@ -195,8 +195,11 @@ async function loadData() {
         }
     });
     
-    renderChart();
-    updateMetricDescription();
+    // Delay initial render slightly to ensure layout is stable
+    setTimeout(() => {
+        renderChart();
+        updateMetricDescription();
+    }, 100);
 }
 
 // Update metric description panel
