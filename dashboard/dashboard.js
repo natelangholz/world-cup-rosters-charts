@@ -486,10 +486,16 @@ function renderChart() {
         };
     }).filter(d => d !== null); // Filter out null values (missing market data)
     
-    svg.selectAll('.flag')
+    // Create flag groups with image and clickable overlay
+    const flagGroups = svg.selectAll('.flag-group')
         .data(dataWithJitter)
         .enter()
-        .append('image')
+        .append('g')
+        .attr('class', 'flag-group')
+        .style('cursor', 'pointer');
+    
+    // Add the flag image
+    flagGroups.append('image')
         .attr('class', 'flag')
         .attr('href', d => {
             const code = countryFlags[d.country] || 'un';
@@ -499,7 +505,7 @@ function renderChart() {
         .attr('y', d => d.displayY - flagSize/2)
         .attr('width', flagSize)
         .attr('height', flagSize)
-        .style('cursor', 'pointer')
+        .style('pointer-events', 'none')
         .on('error', function(event, d) {
             // Fallback for missing flags - show country code
             d3.select(this.parentNode)
@@ -511,8 +517,20 @@ function renderChart() {
                 .style('font-size', '10px')
                 .style('font-weight', 'bold')
                 .text(d.country.substring(0, 3).toUpperCase());
-        })
-        .on('click', function(event, d) {
+        });
+    
+    // Add invisible clickable rect overlay (Chrome fix)
+    flagGroups.append('rect')
+        .attr('class', 'flag-click-area')
+        .attr('x', d => d.displayX - flagSize/2)
+        .attr('y', d => d.displayY - flagSize/2)
+        .attr('width', flagSize)
+        .attr('height', flagSize)
+        .style('fill', 'transparent')
+        .style('pointer-events', 'all');
+    
+    // Attach click handler to the group
+    flagGroups.on('click', function(event, d) {
             // First, handle cluster expansion if this flag is part of a cluster
             if (d.clusterSize > 1) {
                 // Find all flags in the same cluster (same year, similar value)
