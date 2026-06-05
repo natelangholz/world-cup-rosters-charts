@@ -24,6 +24,7 @@ env/
 *.ipynb_checkpoints
 
 # Data files (keep structure, ignore content)
+# Exclude main data directory but allow dashboard data
 data/raw/**/*.csv
 data/raw/**/*.json
 data/processed/**/*.csv
@@ -34,6 +35,9 @@ data/cache/**/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/cache/.gitkeep
+
+# Allow dashboard data files (needed for GitHub Pages deployment)
+!dashboard/data/processed/*.csv
 
 # Logs
 *.log
