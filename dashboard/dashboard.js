@@ -285,9 +285,17 @@ function renderChart() {
     // Clear existing chart
     d3.select('#chart').selectAll('*').remove();
     
+    // Get container dimensions for responsive sizing
+    const container = document.getElementById('chart');
+    const containerWidth = container.clientWidth;
+    
+    // Calculate available height (viewport height minus header and padding)
+    const viewportHeight = window.innerHeight;
+    const availableHeight = viewportHeight - 200; // Account for header, padding, and margins
+    
     const margin = {top: 40, right: 60, bottom: 160, left: 80};
-    const width = 1200 - margin.left - margin.right;
-    const height = 720 - margin.top - margin.bottom;
+    const width = containerWidth - margin.left - margin.right;
+    const height = Math.min(availableHeight - margin.top - margin.bottom, width * 0.6);
     
     const svg = d3.select('#chart')
         .append('svg')
@@ -651,7 +659,7 @@ function renderChart() {
             tooltip
                 .style('opacity', 1)
                 .html(`<strong>${d.country}</strong><br>${d.year}<br>${value}`)
-                .style('left', (event.pageX + 10) + 'px')
+                .style('left', (event.pageX + 25) + 'px')
                 .style('top', (event.pageY - 10) + 'px');
         })
         .on('mouseout', function(event, d) {
@@ -705,5 +713,16 @@ document.querySelectorAll('.dropdown-item').forEach(item => {
 
 // Initialize
 loadData();
+
+// Add window resize listener with debouncing
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (data.length > 0) {
+            renderChart();
+        }
+    }, 250);
+});
 
 // Made with Bob
