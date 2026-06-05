@@ -296,9 +296,15 @@ function renderChart() {
     
     // Calculate available height (viewport height minus header and padding)
     const viewportHeight = window.innerHeight;
-    const availableHeight = viewportHeight - 200; // Account for header, padding, and margins
+    const isMobile = window.innerWidth <= 768;
     
-    const margin = {top: 40, right: 60, bottom: 160, left: 80};
+    // Adjust margins for mobile devices - smaller bottom margin for smaller logos
+    const margin = isMobile
+        ? {top: 0, right: 30, bottom: 80, left: 50}  // No top margin to move chart higher
+        : {top: 40, right: 60, bottom: 160, left: 80}; // Original margins on desktop
+    
+    const availableHeight = viewportHeight - 200;
+    
     const width = Math.max(600, containerWidth - margin.left - margin.right);
     const height = Math.min(availableHeight - margin.top - margin.bottom, width * 0.6);
     
@@ -356,20 +362,24 @@ function renderChart() {
         .domain(yDomain)
         .range([height, 0]);
     
-    // Add World Cup logos on X-axis (bottom) - using PNG files (bigger size)
+    // Add World Cup logos on X-axis (bottom) - smaller on mobile
+    const logoSize = isMobile ? 50 : 100;  // Half size on mobile
+    const logoYOffset = isMobile ? 15 : 30;
+    const textYOffset = isMobile ? 70 : 145;
+    
     years.forEach(year => {
         svg.append('image')
             .attr('href', `logos/wc_${year}.png`)
-            .attr('x', xScale(year) + xScale.bandwidth()/2 - 50)
-            .attr('y', height + 30)
-            .attr('width', 100)
-            .attr('height', 100);
+            .attr('x', xScale(year) + xScale.bandwidth()/2 - logoSize/2)
+            .attr('y', height + logoYOffset)
+            .attr('width', logoSize)
+            .attr('height', logoSize);
         
         svg.append('text')
             .attr('x', xScale(year) + xScale.bandwidth()/2)
-            .attr('y', height + 145)
+            .attr('y', height + textYOffset)
             .attr('text-anchor', 'middle')
-            .style('font-size', '14px')
+            .style('font-size', isMobile ? '12px' : '14px')
             .style('font-weight', 'bold')
             .text(year);
     });
