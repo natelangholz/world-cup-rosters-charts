@@ -111,7 +111,7 @@ const metricDescriptions = {
 // Load and process data
 async function loadData() {
     // Load tournament results
-    const resultsResponse = await fetch('../data/processed/tournament_results.csv');
+    const resultsResponse = await fetch('data/processed/tournament_results.csv');
     const resultsText = await resultsResponse.text();
     const resultsRows = d3.csvParse(resultsText);
     
@@ -121,7 +121,7 @@ async function loadData() {
         tournamentResults[key] = row.Display;
     });
     
-    const response = await fetch('../data/processed/rosters_with_market_values.csv');
+    const response = await fetch('data/processed/rosters_with_market_values.csv');
     const csvText = await response.text();
     const rows = d3.csvParse(csvText);
     
