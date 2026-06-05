@@ -7,7 +7,7 @@
 ### Final Statistics
 - **Total Players:** 6,462 across 8 World Cups (1998-2026)
 - **Transfermarkt IDs:** 6,382 (98.76%)
-- **Market Values:** 4,895 (75.76%)
+- **Market Values:** 4,896 (75.77%)
 
 ### By Year
 
