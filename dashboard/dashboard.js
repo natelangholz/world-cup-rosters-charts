@@ -292,18 +292,24 @@ function renderChart() {
     const container = document.getElementById('chart');
     const containerWidth = container.clientWidth;
     
+    console.log('Container width:', containerWidth);
+    
     // Calculate available height (viewport height minus header and padding)
     const viewportHeight = window.innerHeight;
     const availableHeight = viewportHeight - 200; // Account for header, padding, and margins
     
     const margin = {top: 40, right: 60, bottom: 160, left: 80};
-    const width = containerWidth - margin.left - margin.right;
+    const width = Math.max(600, containerWidth - margin.left - margin.right);
     const height = Math.min(availableHeight - margin.top - margin.bottom, width * 0.6);
+    
+    console.log('Chart dimensions:', width, height);
     
     const svg = d3.select('#chart')
         .append('svg')
-        .attr('width', width + margin.left + margin.right)
+        .attr('width', '100%')
         .attr('height', height + margin.top + margin.bottom)
+        .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
         .style('display', 'block')
         .style('margin', '0 auto')
         .append('g')
