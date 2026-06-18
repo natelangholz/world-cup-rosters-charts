@@ -2,6 +2,8 @@
 
 An interactive data visualization dashboard displaying FIFA World Cup rosters from 1998-2026, enriched with player market valuations. Built with Python for data collection and D3.js for interactive visualizations.
 
+See it live here: [https://natelangholz.github.io/world-cup-rosters-charts/](https://natelangholz.github.io/world-cup-rosters-charts/)
+
 ![Dashboard Screenshot](assets/dashboard-screenshot.png)
 
 *Interactive dashboard showing Argentina's relative market value across World Cup tournaments with detailed statistics panel*
